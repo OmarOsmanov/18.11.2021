@@ -1,0 +1,131 @@
+CREATE DATABASE LIRARY
+
+USE LIRARY
+
+--BOOK
+
+CREATE TABLE Book
+(
+	Id INT IDENTITY PRIMARY KEY,
+	Name NVARCHAR(100) CHECK(LEN(Name) BETWEEN 2 AND 100),
+	AuthorId INT,
+	PageCount INT CHECK(PageCount >= 10)
+)
+
+--AUTHOR
+
+CREATE TABLE Author
+(
+	Id INT IDENTITY PRIMARY KEY,
+	Name NVARCHAR(50),
+	Surname NVARCHAR(50)
+)
+
+ALTER TABLE Book
+ADD CONSTRAINT FK_AuthorId_Book FOREIGN KEY (AuthorId) REFERENCES Author(Id)
+
+
+-- INSERT DATA
+
+INSERT INTO Author
+VALUES
+('OMAR','OSMANOV'),
+('ELI','NAGIYEV'),
+('MAMAED','BAYRAMOV'),
+('BAYRAM','AGAYEV'),
+('FERID','KISIYEV'),
+('NIZAMI','MIRZELI')
+
+SELECT * FROM Author
+
+INSERT INTO Book
+VALUES
+('QOCAQ',1,512),
+('YARAQLI',3,336),
+('BALI QAPILAR',3,445),
+('ZERERSIZ SEVGI',1,339),
+('AGCAQANADLAR',5,665),
+('DERYA GOZELI',2,1035),
+('QARA BELA',4,330),
+('GOY GOZLU QIZ',2,480),
+('MAVI DENIZ',3,118),
+('AHLI ZALIMLER',5,666),
+('DEYAZ VE ORAQ',4,850)
+
+SELECT * FROM Book
+
+
+--TASK1
+CREATE VIEW BUTUN_DATALAR
+AS
+SELECT Book.Id, Book.Name, Book.PageCount, CONCAT(Author.Name,' ',Author.Surname) AS 'AuthorFullName' FROM Book 
+JOIN Author ON Author.Id = Book.AuthorId
+
+
+SELECT * FROM BUTUN_DATALAR
+
+--TASK2
+CREATE PROCEDURE USP_AXTARIS @DEYER NVARCHAR(100)
+AS
+SELECT * FROM BUTUN_DATALAR
+WHERE BUTUN_DATALAR.Name LIKE '%'*@DEYER*'%' OR AuthorFullName LIKE '%'*@DEYER*'%'
+
+EXEC USP_AXTARIS 'DEYAZ VE ORAQ'
+
+
+
+--TASK3.1
+CREATE PROCEDURE USP_Author_Insert @AuthorName NVARCHAR(50), @AuthorSurname NVARCHAR(50)
+AS
+INSERT INTO Author
+VALUES
+(@AuthorName, @AuthorSurname)
+
+EXEC USP_Author_Insert 'MALIK','MALIKLI'
+
+
+--TASK3.2
+
+CREATE PROCEDURE USP_Author_DELETE @Id INT
+AS
+DELETE FROM Author
+WHERE Author.Id = @Id
+
+EXEC USP_Author_DELETE 9
+
+SELECT * FROM Author
+
+
+
+--TASK3.3
+
+CREATE PROCEDURE USP_Author_UpdateName @value NVARCHAR(100), @Id INT
+AS
+UPDATE Author
+SET Name =  @value
+WHERE Author.Id = @Id
+
+
+CREATE PROCEDURE USP_Author_UpdateSurname @value NVARCHAR(100), @Id INT
+AS
+UPDATE Author
+SET Surname =  @value
+WHERE Author.Id = @Id
+
+
+EXEC USP_Author_UpdateName 'KAMIL', 7
+EXEC USP_Author_UpdateSurname 'PASAYEV', 7
+
+
+
+--TASK4
+CREATE VIEW VW_AuthorData
+AS
+SELECT Author.Id, Author.Name + ' ' + Author.Surname AS 'FullName', 
+(SELECT COUNT(AuthorId) FROM Book WHERE Author.Id = AuthorId) AS 'MaxPageCount',
+(SELECT MAX(PageCount) FROM Book WHERE Author.Id = AuthorId) AS 'BookCount'
+FROM Author 
+WHERE EXISTS (SELECT * FROM Book WHERE Book.AuthorId = Author.Id )
+
+
+SELECT * FROM VW_AuthorData
